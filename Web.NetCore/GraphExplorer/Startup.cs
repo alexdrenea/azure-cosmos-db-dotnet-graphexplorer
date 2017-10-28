@@ -34,7 +34,7 @@ namespace GraphExplorer
 
             services.AddOptions();
 
-            services.Configure<DocDbConfig>(Configuration.GetSection("DocumentDBConfig"));
+            services.Configure<DocDbConfigSettings>(Configuration.GetSection("DocumentDBConfig"));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

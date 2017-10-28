@@ -14,19 +14,18 @@ namespace GraphExplorer.Controllers
     [Route("api/[controller]")]
     public class GremlinController : Controller
     {
-        private readonly DocDbConfig dbConfig;
-        private readonly DocumentClient client; 
+        private readonly DocDbConfigSettings dbConfig;
 
-        public GremlinController(IOptions<DocDbConfig> configSettings)
+        public GremlinController(IOptions<DocDbConfigSettings> configSettings)
         {
-            dbConfig = configSettings.Value;            
-            client = new DocumentClient(new Uri(dbConfig.Endpoint), dbConfig.AuthKey, new ConnectionPolicy { EnableEndpointDiscovery = false });
+            dbConfig = configSettings.Value;
         }
 
         [HttpGet]
-        public async Task<dynamic> Get(string query, string collectionId)
+        public async Task<dynamic> Get(string query, string collectionId, string connectionName)
         {
-            Database database = client.CreateDatabaseQuery("SELECT * FROM d WHERE d.id = \"" + dbConfig.Database + "\"").AsEnumerable().FirstOrDefault();
+            var client = dbConfig.Config[connectionName];
+            Database database = client.CreateDatabaseQuery("SELECT * FROM d WHERE d.id = \"" + connectionName + "\"").AsEnumerable().FirstOrDefault();
             List<DocumentCollection> collections = client.CreateDocumentCollectionQuery(database.SelfLink).ToList();
             DocumentCollection coll = collections.Where(x => x.Id == collectionId).FirstOrDefault();
 
@@ -41,7 +40,7 @@ namespace GraphExplorer.Controllers
                 {
                     var singleQuery = q.Trim();
 
-                    await ExecuteQuery(coll, singleQuery)
+                    await ExecuteQuery(client, coll, singleQuery)
                             .ContinueWith(
                                 (task) =>
                                 {
@@ -54,7 +53,7 @@ namespace GraphExplorer.Controllers
             return results;
         }
 
-        private async Task<List<dynamic>> ExecuteQuery(DocumentCollection coll, string query)
+        private async Task<List<dynamic>> ExecuteQuery(DocumentClient client, DocumentCollection coll, string query)
         {
             var results = new List<dynamic>();
 

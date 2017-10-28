@@ -37,9 +37,13 @@
                 string databaseId = ConfigurationManager.AppSettings["database"];
                 string collectionName = ConfigurationManager.AppSettings["collection"];
 
-                // try syncing the settings from App.Config to the GraphExplorer's appsettings.json file
-                TryUpdateGraphExplorerSettings(endpointUrl, primaryKey, databaseId).Wait();
+                var graphExplorerSettingsFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\Web\GraphExplorer\appsettings.json");
+                var graphExplorerNetCoreSettingsFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\Web.NetCore\GraphExplorer\appsettings.json");
 
+                // try syncing the settings from App.Config to the GraphExplorer's appsettings.json file
+                TryUpdateGraphExplorerSettings(graphExplorerSettingsFilePath, false, endpointUrl, primaryKey, databaseId).Wait();
+                TryUpdateGraphExplorerSettings(graphExplorerNetCoreSettingsFilePath, true, endpointUrl, primaryKey, databaseId).Wait();
+                return;
                 // Let's check if the database and collection exist, or if they need to be created
                 SetupDocDb(endpointUrl, primaryKey, databaseId, collectionName).Wait();
 
@@ -98,23 +102,23 @@
             Console.Read();
         }
 
-        private static Task<bool> TryUpdateGraphExplorerSettings(string endpointUrl, string primaryKey, string databaseId)
+        private static Task<bool> TryUpdateGraphExplorerSettings(string destinationFile, bool netCore, string endpointUrl, string primaryKey, string databaseId)
         {
-            string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\Web\GraphExplorer\appsettings.json");
-
             Console.WriteLine("Synchronizing settings to the GraphExplorer project's appsettings.json file...");
             try
             {
                 lock (TheLock)
                 {
-                    string json = File.ReadAllText(filePath);
+                    string json = File.ReadAllText(destinationFile);
                     dynamic settings = JsonConvert.DeserializeObject(json);
 
-                    settings.DocumentDBConfig.endpoint = endpointUrl;
-                    settings.DocumentDBConfig.authKey = primaryKey;
-                    settings.DocumentDBConfig.database = databaseId;
+                    ///The settings file formart is slightly different across the 2 projects, need to handle both.
+                    if (netCore)
+                        UpdateGraphExplorerNetCoreSettings(settings, endpointUrl, primaryKey, databaseId);
+                    else
+                        UpdateGraphExplorerSettings(settings, endpointUrl, primaryKey, databaseId);
 
-                    using (FileStream fs = new FileStream(filePath, FileMode.Create))
+                    using (FileStream fs = new FileStream(destinationFile, FileMode.Create))
                     {
                         using (StreamWriter streamWriter = new StreamWriter(fs))
                         {
@@ -142,6 +146,19 @@
             return Task.FromResult(true);
         }
 
+        private static void UpdateGraphExplorerSettings(dynamic settings, string endpointUrl, string primaryKey, string databaseId)
+        {
+            settings.DocumentDBConfig[0].endpoint = endpointUrl;
+            settings.DocumentDBConfig[0].authKey = primaryKey;
+            settings.DocumentDBConfig[0].database = databaseId;
+        }
+        private static void UpdateGraphExplorerNetCoreSettings(dynamic settings, string endpointUrl, string primaryKey, string databaseId)
+        {
+            settings.DocumentDBConfig.Array[0].endpoint = endpointUrl;
+            settings.DocumentDBConfig.Array[0].authKey = primaryKey;
+            settings.DocumentDBConfig.Array[0].database = databaseId;
+        }
+
         static async Task<bool> SetupDocDb(string endpointUrl, string primaryKey, string databaseId, string collectionName)
         {
             try
@@ -158,7 +175,7 @@
                     if (documentClientException.Error?.Code == "NotFound")
                     {
                         Console.WriteLine("Your Database, \"" + databaseId + "\" does not exist. Creating it...");
-                        await client.CreateDatabaseIfNotExistsAsync(new Database {Id = databaseId});
+                        await client.CreateDatabaseIfNotExistsAsync(new Database { Id = databaseId });
                         Console.WriteLine("Created Database!");
                     }
                     else

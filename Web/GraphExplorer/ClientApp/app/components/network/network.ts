@@ -98,8 +98,10 @@ export class Network
     edgeSize = "1";
     iconSize = "25";
 
+    connections: Array<string>;
     collections: Array<string>;
     selectedCollection: string;
+    selectedConnection: string;
     collectionTitle: string;
 
     labelMappings: { [label: string]: string } = {};
@@ -112,7 +114,7 @@ export class Network
     constructor(http: HttpClient, eventAggregator: EventAggregator)
     {
         this.http = http;
-        this.getCollections();
+        this.getConnections();
 
         eventAggregator.subscribe('consoleupdate', response =>
         {
@@ -130,7 +132,7 @@ export class Network
 
         this.progressText = "Querying DocumentDB";
         this.loading = true;
-        this.http.fetch(`api/gremlin?query=${this.query}&collectionId=${this.selectedCollection}`)
+        this.http.fetch(`api/gremlin?query=${this.query}&collectionId=${this.selectedCollection}&connectionName=${this.selectedConnection}`)
             .then((response: any) => { return this.handleErrors(response); })
             .then(result => result.json())
             .then((data: any) =>
@@ -298,6 +300,11 @@ export class Network
         this.theConsole.clear();
         this.getSavedQueries();
         this.getSavedSettings();
+    }
+
+    connectionChange() {
+        this.collectionTitle = '';
+        this.getCollections();
     }
 
     private setNodeOrEdgeSize(type, value)
@@ -571,10 +578,23 @@ export class Network
         }, 500);
     }
 
+    private getConnections() {
+        this.http.fetch('api/collection/connections')
+            .then((response: any) => { return this.handleErrors(response); })
+            .then(result => result.json())
+            .then((data: any) => {
+                this.connections = data;
+                if (this.connections && this.connections.length > 0) {
+                    this.selectedConnection = this.connections[0];
+                    this.getCollections();
+                }
+            })
+    }
+
     /* manipulating collection methods */
     private getCollections()
     {
-        this.http.fetch('api/collection')
+        this.http.fetch(`api/collection?name=${this.selectedConnection}`)
             .then((response: any) => { return this.handleErrors(response); })
             .then(result => result.json())
             .then((data: any) =>
@@ -615,7 +635,7 @@ export class Network
 
     private addCollection()
     {
-        this.http.fetch(`api/collection?name=${this.collectionTitle}`, { method: 'post' })
+        this.http.fetch(`api/collection?name=${this.collectionTitle}&connectionName=${this.selectedConnection}`, { method: 'post' })
             .then((response: any) => { return this.handleErrors(response);  })
             .then((response: any) => { this.getCollections(); })
         this.modal = this.modalTypes.None;

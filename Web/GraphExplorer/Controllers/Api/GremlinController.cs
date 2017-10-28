@@ -7,16 +7,16 @@
     using GraphExplorer.Configuration;
     using System.Collections.Generic;
     using System.Threading.Tasks;
+    using Microsoft.Azure.Documents.Client;
 
     public class GremlinController : ApiController
     {
-        static DocDbConfig dbConfig = AppSettings.Instance.GetSection<DocDbConfig>("DocumentDBConfig");
-
         [HttpGet]
-        public async Task<dynamic> Get(string query, string collectionId)
+        public async Task<dynamic> Get(string query, string collectionId, string connectionName)
         {
-            Database database = DocDbSettings.Client.CreateDatabaseQuery("SELECT * FROM d WHERE d.id = \"" + DocDbSettings.DatabaseId + "\"").AsEnumerable().FirstOrDefault();
-            List<DocumentCollection> collections = DocDbSettings.Client.CreateDocumentCollectionQuery(database.SelfLink).ToList();
+            var client = DocDbSettings.Config[connectionName];
+            Database database = client.CreateDatabaseQuery("SELECT * FROM d WHERE d.id = \"" + connectionName + "\"").AsEnumerable().FirstOrDefault();
+            List<DocumentCollection> collections = client.CreateDocumentCollectionQuery(database.SelfLink).ToList();
             DocumentCollection coll = collections.Where(x => x.Id == collectionId).FirstOrDefault();
 
             var tasks = new List<Task>();
@@ -30,7 +30,7 @@
                 {
                     var singleQuery = q.Trim();
 
-                    await ExecuteQuery(coll, singleQuery)
+                    await ExecuteQuery(client, coll, singleQuery)
                             .ContinueWith(
                                 (task) =>
                                 {
@@ -43,11 +43,11 @@
             return results;
         }
 
-        private async Task<List<dynamic>> ExecuteQuery(DocumentCollection coll, string query)
+        private async Task<List<dynamic>> ExecuteQuery(DocumentClient client, DocumentCollection coll, string query)
         {
             var results = new List<dynamic>();
 
-            var gremlinQuery = DocDbSettings.Client.CreateGremlinQuery(coll, query);
+            var gremlinQuery = client.CreateGremlinQuery(coll, query);
 
             while (gremlinQuery.HasMoreResults)
             {

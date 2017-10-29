@@ -981,6 +981,36 @@ export class Network
             this.selectedNodeIconFont = null;
         }
     }
+    private downloadData(data) {
+        var csvLines = data.map(function (d) {
+            var str = [];
+            for (var key in d)
+                str.push(d[key]);
+            return str.join(',');
+        })
+
+        var headerLine = [];
+        for (var key in data[0])
+            headerLine.push(key);
+        csvLines.splice(0, 0, headerLine.join(','));
+
+        var csv = csvLines.join('\n')
+
+        if (navigator.msSaveOrOpenBlob) {
+            // Works for Internet Explorer and Microsoft Edge
+            var blob = new Blob([csv], { type: "text/csv" });
+            navigator.msSaveOrOpenBlob(blob, "export.csv");
+        }
+        else {
+            var a = document.createElement('a');
+            a.style.display = 'none';
+            a.download = "export.csv";
+            document.body.appendChild(a);
+            a.href = encodeURI("data:text/csv;charset=utf-8," + csv);
+            a.click();
+            a.remove();
+        }
+    }
 }
 
 //Class for iterating over object keys

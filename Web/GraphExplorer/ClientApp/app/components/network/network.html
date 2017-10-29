@@ -39,15 +39,32 @@
         </fieldset>
 
         <div class="buttons">
+            <button class="linkBtn ${Mode === ViewMode.Table ? 'selected' : ''}" click.delegate="Mode=ViewMode.Table"><i class="icon icon-unformatted"></i>Table View</button>
+            <button class="linkBtn ${Mode === ViewMode.Graph ? 'selected' : ''}" click.delegate="Mode=ViewMode.Graph"><i class="icon icon-formatted"></i>Graph View</button>
             <button class="linkBtn" click.delegate="theGuide.expand()" show.bind="!theGuide.IsVisible">Show Guide</button>
             <button ref="showConsoleButton" class="linkBtn" click.delegate="theConsole.expand()" show.bind="!theConsole.IsVisible">Show Console</button>
         </div>
     </form>
 
-	<console view-model.ref="theConsole"></console>
-	<guide view-model.ref="theGuide"></guide>
+    <console view-model.ref="theConsole"></console>
+    <guide view-model.ref="theGuide"></guide>
 
-    <div id="graphWorkspace">
+    <div if.bind="Mode === ViewMode.Table" id="tableWorkspace">
+        <div repeat.for="data of tableItems">
+            <div class="buttons">
+                <h2>Result</h2>
+                <button class="linkBtn" click.delegate="downloadData(data)">Download as CSV</button>
+            </div>
+            <table id="dataTable">
+                <tr repeat.for="item of data">
+                    <td>aaa</td>
+                </tr>
+            </table>
+        </div>
+
+    </div>
+
+    <div if.bind="Mode === ViewMode.Graph" id="graphWorkspace">
 
         <button class="showConfigBtn blackBtn" click.delegate="launchConfiguration()" if.bind="!showConfiguration && network && !loading && selector == selectorTypes.None">Configure Graph</button>
 

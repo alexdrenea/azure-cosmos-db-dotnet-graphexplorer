@@ -28,6 +28,10 @@ interface Metadata
     label?: string;
     _displayLabel?: string;
 }
+enum ViewMode {
+    Table,
+    Graph
+}
 
 enum PropertyPanelMode
 {
@@ -108,11 +112,19 @@ export class Network
     edgeColors: { [label: string]: string } = {};
     selectedLabelProperty: string;
 
+    tableItems: any[]
     nodes: any;
     edges: any;
 
-    constructor(http: HttpClient, eventAggregator: EventAggregator)
-    {
+    private mode: ViewMode = ViewMode.Graph;
+    get Mode(): ViewMode {
+        return this.mode;
+    }
+    set Mode(value: ViewMode) {
+        this.mode = value;
+    }
+
+    constructor(http: HttpClient, eventAggregator: EventAggregator) {
         this.http = http;
         this.getConnections();
 
@@ -130,6 +142,7 @@ export class Network
     {
         this.resetUi();
 
+        this.tableItems = [];
         this.progressText = "Querying DocumentDB";
         this.loading = true;
         this.http.fetch(`api/gremlin?query=${this.query}&collectionId=${this.selectedCollection}&connectionName=${this.selectedConnection}`)
@@ -153,6 +166,7 @@ export class Network
                             this.theConsole.write('No data returned from query', false);
                         }
 
+                        this.tableItems.push(query.queryResult.map(this.flattenGraphson));
                         dataForDisplay = dataForDisplay.concat(query.queryResult);
                     }
 
@@ -859,6 +873,31 @@ export class Network
 
     private doFilter(e)
     {
+    private flattenGraphson(data) {
+        var res = {};
+        switch (data.type) {
+            case 'vertex':
+                if (data.properties != null) {
+                    for (var kk in data.properties) {
+                        res[kk] = data.properties[kk][0].value;
+                    }
+                }
+                break;
+
+            case 'edge':
+                if (data.properties != null) {
+                    for (var i in data.properties) {
+                        res[i] = data.properties[i];
+                    }
+                }
+                break;
+
+            default:
+                break;
+        }
+
+        return res;
+    }
         var filter = e.target.value;
 
         var result: Metadata = {};
@@ -965,5 +1004,6 @@ export class NetworkBinder
     {
         view.overrideContext.PropertyPanelMode = PropertyPanelMode;
         view.overrideContext.SettingsPanelMode = SettingsPanelMode;
+        view.overrideContext.ViewMode = ViewMode;
     }
 }

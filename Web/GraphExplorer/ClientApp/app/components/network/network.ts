@@ -157,6 +157,7 @@ export class Network
                     for (let query of data)
                     {
                         this.theConsole.write(query.queryText);
+                        this.theConsole.write(query.queryStats);
 
                         if (query.queryResult && query.queryResult.length)
                         {

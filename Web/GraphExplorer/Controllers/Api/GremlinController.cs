@@ -8,6 +8,7 @@
     using System.Collections.Generic;
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents.Client;
+    using System;
 
     public class GremlinController : ApiController
     {
@@ -34,7 +35,7 @@
                             .ContinueWith(
                                 (task) =>
                                 {
-                                    results.Add(new { queryText = singleQuery, queryResult = task.Result });
+                                    results.Add(new { queryText = singleQuery, queryResult = task.Result.Item1, queryStats = task.Result.Item2 });
                                 }
                             );
                 }
@@ -43,21 +44,34 @@
             return results;
         }
 
-        private async Task<List<dynamic>> ExecuteQuery(DocumentClient client, DocumentCollection coll, string query)
+        private async Task<Tuple<List<dynamic>, QueryStats>> ExecuteQuery(DocumentClient client, DocumentCollection coll, string query)
         {
             var results = new List<dynamic>();
+            var queryStats = new QueryStats();
 
-            var gremlinQuery = client.CreateGremlinQuery(coll, query);
-
+            var gremlinQuery = client.CreateGremlinQuery(coll, query, new FeedOptions() { PopulateQueryMetrics = true });
+            var dt = DateTime.Now;
             while (gremlinQuery.HasMoreResults)
             {
-                foreach (var result in await gremlinQuery.ExecuteNextAsync())
+                var feedResponse = await gremlinQuery.ExecuteNextAsync();
+                foreach (var result in feedResponse)
                 {
+                    if (result.GetType() == typeof(Newtonsoft.Json.Linq.JObject))
+                        queryStats.RequestCharge += feedResponse.RequestCharge;
                     results.Add(result);
                 }
             }
-
-            return results;
+            queryStats.ExecutionTime = DateTime.Now.Subtract(dt).TotalSeconds;
+            return Tuple.Create(results, queryStats);
         }
+    }
+
+    public class QueryStats
+    {
+        public double RequestCharge { get; set; }
+        /// <summary>
+        /// Query execution time in s
+        /// </summary>
+        public double ExecutionTime { get; set; }
     }
 }

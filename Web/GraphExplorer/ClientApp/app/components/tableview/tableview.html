@@ -1,0 +1,25 @@
+﻿<template>
+    <div id="tableview">
+        <require from="./tableview.css"></require>
+        
+        <div repeat.for="tableItem of tableItems">
+            <div class="buttons">
+                <h2>Result</h2>
+                <button class="linkBtn" click.delegate="downloadData(tableItem.data)">Download as CSV</button>
+            </div>
+            <table class="table table-striped" aurelia-table="data.bind: tableItem.data; display-data.bind: $displayData">
+                <thead>
+                    <tr>
+ <!--                       <th repeat.for="header of tableItem.headers" ref="referenced" aut-sort="key: ${header}">${header}</th>-->
+                        <th repeat.for="header of tableItem.headers" ref="referenced">${header}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr repeat.for="row of $displayData">
+                        <td repeat.for="header of tableItem.headers">${value(row, header)}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</template>

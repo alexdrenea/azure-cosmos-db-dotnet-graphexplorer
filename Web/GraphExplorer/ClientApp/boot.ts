@@ -12,7 +12,10 @@ export function configure(aurelia: Aurelia) {
     aurelia.use
         .standardConfiguration()
         .plugin('aurelia-oauth', (oauthService, oauthTokenService, configureClient) =>
-            configureOauth(oauthService, oauthTokenService, configureClient, httpClient));
+            configureOauth(oauthService, oauthTokenService, configureClient, httpClient))
+        .plugin('au-table')
+        ;
+       
 
     if (IS_DEV_BUILD) {
         aurelia.use.developmentLogging();

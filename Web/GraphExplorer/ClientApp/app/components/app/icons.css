@@ -10,6 +10,11 @@
     src: local('☺'), url(../../../fonts/Commercial-Graph-Icons.ttf);
 }
 
+@font-face {
+    font-family: 'FontAwesome';
+    src: local('☺'), url(../../../fonts/fontawesome-webfont.ttf);
+}
+
 .icon, .SegoeIcons
 {
 	font-family: 'SegoeIcons';

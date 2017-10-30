@@ -4,6 +4,8 @@
     <require from="../floating/floating.html"></require>
 	<require from="../console/console"></require>
     <require from="../guide/guide"></require>
+    <require from="../tableview/tableview"></require>
+
     <require from="../json-formatter/json-formatter"></require>
 
     <form class="queryControl" submit.delegate="executeQuery()">
@@ -49,22 +51,11 @@
     <console view-model.ref="theConsole"></console>
     <guide view-model.ref="theGuide"></guide>
 
-    <div if.bind="Mode === ViewMode.Table" id="tableWorkspace">
-        <div repeat.for="data of tableItems">
-            <div class="buttons">
-                <h2>Result</h2>
-                <button class="linkBtn" click.delegate="downloadData(data)">Download as CSV</button>
-            </div>
-            <table id="dataTable">
-                <tr repeat.for="item of data">
-                    <td>aaa</td>
-                </tr>
-            </table>
-        </div>
-
+    <div show.bind="Mode === ViewMode.Table" id="tableWorkspace" style="overflow-y: scroll;overflow-x:scroll; height:800px">
+        <table-view view-model.ref="theTableView"></table-view>
     </div>
 
-    <div if.bind="Mode === ViewMode.Graph" id="graphWorkspace">
+    <div show.bind="Mode === ViewMode.Graph" id="graphWorkspace">
 
         <button class="showConfigBtn blackBtn" click.delegate="launchConfiguration()" if.bind="!showConfiguration && network && !loading && selector == selectorTypes.None">Configure Graph</button>
 

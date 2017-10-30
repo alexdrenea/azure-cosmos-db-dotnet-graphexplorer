@@ -17,6 +17,7 @@ module.exports = {
     entry: {
         vendor: [
             'bluebird',
+            'au-table',
             'aurelia-event-aggregator',
             'aurelia-fetch-client',
             'aurelia-framework',

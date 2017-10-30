@@ -5,6 +5,7 @@ import { EventAggregator } from 'aurelia-event-aggregator';
 import { Settings } from './settings';
 import { Console } from '../console/console';
 import { Guide } from '../guide/guide';
+import { TableView } from '../tableview/tableview';
 import { viewEngineHooks } from 'aurelia-templating';
 
 declare var vis: any;
@@ -52,6 +53,7 @@ export class Network
     private networkContainer: HTMLElement;
     private showConsoleButton: HTMLElement;
     private theConsole: Console;
+    private theTableView: TableView;
     private graphMetadata: Metadata;
     private graphMetadataOriginal: Metadata;
     private http: HttpClient;
@@ -112,7 +114,6 @@ export class Network
     edgeColors: { [label: string]: string } = {};
     selectedLabelProperty: string;
 
-    tableItems: any[]
     nodes: any;
     edges: any;
 
@@ -142,7 +143,7 @@ export class Network
     {
         this.resetUi();
 
-        this.tableItems = [];
+        this.theTableView.clear();
         this.progressText = "Querying DocumentDB";
         this.loading = true;
         this.http.fetch(`api/gremlin?query=${this.query}&collectionId=${this.selectedCollection}&connectionName=${this.selectedConnection}`)
@@ -166,7 +167,7 @@ export class Network
                             this.theConsole.write('No data returned from query', false);
                         }
 
-                        this.tableItems.push(query.queryResult.map(this.flattenGraphson));
+                        this.theTableView.write(query.queryResult);
                         dataForDisplay = dataForDisplay.concat(query.queryResult);
                     }
 
@@ -871,33 +872,7 @@ export class Network
         this.searchString = '';
     }
 
-    private doFilter(e)
-    {
-    private flattenGraphson(data) {
-        var res = {};
-        switch (data.type) {
-            case 'vertex':
-                if (data.properties != null) {
-                    for (var kk in data.properties) {
-                        res[kk] = data.properties[kk][0].value;
-                    }
-                }
-                break;
-
-            case 'edge':
-                if (data.properties != null) {
-                    for (var i in data.properties) {
-                        res[i] = data.properties[i];
-                    }
-                }
-                break;
-
-            default:
-                break;
-        }
-
-        return res;
-    }
+    private doFilter(e) {
         var filter = e.target.value;
 
         var result: Metadata = {};
@@ -979,36 +954,6 @@ export class Network
             this.selectedNodeIcon = null;
             this.selectedNodeColor = null;
             this.selectedNodeIconFont = null;
-        }
-    }
-    private downloadData(data) {
-        var csvLines = data.map(function (d) {
-            var str = [];
-            for (var key in d)
-                str.push(d[key]);
-            return str.join(',');
-        })
-
-        var headerLine = [];
-        for (var key in data[0])
-            headerLine.push(key);
-        csvLines.splice(0, 0, headerLine.join(','));
-
-        var csv = csvLines.join('\n')
-
-        if (navigator.msSaveOrOpenBlob) {
-            // Works for Internet Explorer and Microsoft Edge
-            var blob = new Blob([csv], { type: "text/csv" });
-            navigator.msSaveOrOpenBlob(blob, "export.csv");
-        }
-        else {
-            var a = document.createElement('a');
-            a.style.display = 'none';
-            a.download = "export.csv";
-            document.body.appendChild(a);
-            a.href = encodeURI("data:text/csv;charset=utf-8," + csv);
-            a.click();
-            a.remove();
         }
     }
 }

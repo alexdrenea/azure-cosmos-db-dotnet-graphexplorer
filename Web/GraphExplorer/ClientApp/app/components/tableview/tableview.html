@@ -7,10 +7,14 @@
                 <h2>Result</h2>
                 <button class="linkBtn" click.delegate="downloadData(tableItem.data)">Download as CSV</button>
             </div>
-            <table class="table table-striped" aurelia-table="data.bind: tableItem.data; display-data.bind: $displayData">
+            <table class="table table-striped" aurelia-table="data.bind: tableItem.data; 
+                                                              display-data.bind: $displayData; 
+                                                              current-page.bind: tableItem.currentPage; 
+                                                              page-size.bind: tableItem.pageSize; 
+                                                              total-items.bind: tableItem.totalItems;">
                 <thead>
                     <tr>
- <!--                       <th repeat.for="header of tableItem.headers" ref="referenced" aut-sort="key: ${header}">${header}</th>-->
+ <!--                   <th repeat.for="header of tableItem.headers" ref="referenced" aut-sort="key: ${header}">${header}</th>-->
                         <th repeat.for="header of tableItem.headers" ref="referenced">${header}</th>
                     </tr>
                 </thead>
@@ -20,6 +24,26 @@
                     </tr>
                 </tbody>
             </table>
+            <div class="row">
+                <div class="col-md-9">
+                    <aut-pagination current-page.bind="tableItem.currentPage" page-size.bind="tableItem.pageSize" total-items.bind="tableItem.totalItems"
+                                    pagination-size.bind="10" boundary-links.bind="true"></aut-pagination>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="form-inline">
+                        <div class="form-group pull-right">
+                            <label for="pageSize">Page Size: </label>
+                            <select value.bind="tableItem.pageSize" id="pageSize" class="form-control">
+                                <option model.bind="5">5</option>
+                                <option model.bind="10">10</option>
+                                <option model.bind="20">20</option>
+                                <option model.bind="50">50</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </template>

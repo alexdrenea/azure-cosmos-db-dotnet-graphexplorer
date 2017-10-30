@@ -5,6 +5,9 @@ import { viewEngineHooks } from 'aurelia-templating';
 interface TableItem {
     data: any[];
     headers: string[];
+    pageSize: number;
+    totalItems: number;
+    currentPage: number;
 }
 
 
@@ -14,7 +17,7 @@ export class TableView {
     private tableItems: any[];
     private ea: EventAggregator;
 
-    constructor(eventAggregator: EventAggregator) {
+        constructor(eventAggregator: EventAggregator) {
         this.ea = eventAggregator;
     }
 
@@ -32,6 +35,8 @@ export class TableView {
             var tableItem = {};
             tableItem['data'] = flattenedData;
             tableItem['headers'] = headers;
+            tableItem['currentPage'] = 1;
+            tableItem['pageSize'] = 10;
             this.tableItems.push(tableItem);
         }
     }

@@ -54,10 +54,9 @@
             while (gremlinQuery.HasMoreResults)
             {
                 var feedResponse = await gremlinQuery.ExecuteNextAsync();
+                queryStats.RequestCharge += feedResponse.RequestCharge;
                 foreach (var result in feedResponse)
                 {
-                    if (result.GetType() == typeof(Newtonsoft.Json.Linq.JObject))
-                        queryStats.RequestCharge += feedResponse.RequestCharge;
                     results.Add(result);
                 }
             }

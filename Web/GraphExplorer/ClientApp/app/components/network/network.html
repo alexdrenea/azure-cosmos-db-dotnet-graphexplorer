@@ -27,6 +27,11 @@
             <button class="blackBtn" type="submit" disabled.bind="!query || loading">Execute</button>
         </fieldset>
         <fieldset class="selectWrapper floatRight">
+            <select value.bind="selectedConnection" change.delegate="connectionChange()" id="connectionCombo">
+                <option repeat.for="con of connections" model.bind="con">${con}</option>
+            </select>
+        </fieldset>
+        <fieldset class="selectWrapper floatRight">
             <select value.bind="selectedCollection" change.delegate="collectionChange()" id="collectionCombo">
                 <option repeat.for="col of collections" model.bind="col">${col}</option>
             </select>

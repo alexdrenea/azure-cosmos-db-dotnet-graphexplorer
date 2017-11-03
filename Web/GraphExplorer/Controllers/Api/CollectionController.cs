@@ -12,38 +12,46 @@
     public class CollectionController : ApiController
     {
         [HttpGet]
-        public dynamic GetCollections()
+        [Route("api/collection/connections")]
+        public dynamic GetConnections()
         {
-            DocumentClient client = DocDbSettings.Client;
-            Database database = client.CreateDatabaseQuery("SELECT * FROM d WHERE d.id = \"" + DocDbSettings.DatabaseId + "\"").AsEnumerable().FirstOrDefault();
+            return DocDbSettings.Config.Keys.ToList();
+        }
+
+        [HttpGet]
+        public dynamic GetCollections(string name)
+        {
+            DocumentClient client = DocDbSettings.Config[name];
+            Database database = client.CreateDatabaseQuery("SELECT * FROM d WHERE d.id = \"" + name + "\"").AsEnumerable().FirstOrDefault();
             List<string> collections = client.CreateDocumentCollectionQuery((String)database.SelfLink).Select(s => s.Id).ToList();
             return collections;
         }
 
         [HttpPost]
-        public async Task CreateCollection([FromUri]string name)
+        public async Task CreateCollection([FromUri]string name, [FromUri]string connectionId)
         {
-            await CreateCollectionIfNotExistsAsync(name);
+            await CreateCollectionIfNotExistsAsync(name, connectionId);
         }
 
         [HttpDelete]
-        public async Task DeleteCollection(string name)
+        public async Task DeleteCollection(string name, string connectionId)
         {
-            await DeleteCollectionAsync(name);
+            await DeleteCollectionAsync(name, connectionId);
         }
 
-        private async Task CreateCollectionIfNotExistsAsync(string collectionId)
+        private async Task CreateCollectionIfNotExistsAsync(string collectionId, string connectionId)
         {
+            var client = DocDbSettings.Config[connectionId];
             try
             {
-                await DocDbSettings.Client.ReadDocumentCollectionAsync(UriFactory.CreateDocumentCollectionUri(DocDbSettings.DatabaseId, collectionId));
+                await client.ReadDocumentCollectionAsync(UriFactory.CreateDocumentCollectionUri(connectionId, collectionId));
             }
             catch (DocumentClientException e)
             {
                 if (e.StatusCode == System.Net.HttpStatusCode.NotFound)
                 {
-                    await DocDbSettings.Client.CreateDocumentCollectionAsync(
-                        UriFactory.CreateDatabaseUri(DocDbSettings.DatabaseId),
+                    await client.CreateDocumentCollectionAsync(
+                        UriFactory.CreateDatabaseUri(connectionId),
                         new DocumentCollection { Id = collectionId },
                         new RequestOptions { OfferThroughput = 400 });
                 }
@@ -54,9 +62,10 @@
             }
         }
 
-        private async Task DeleteCollectionAsync(string collectionId)
+        private async Task DeleteCollectionAsync(string collectionId, string connectionId)
         {
-            await DocDbSettings.Client.DeleteDocumentCollectionAsync(UriFactory.CreateDocumentCollectionUri(DocDbSettings.DatabaseId, collectionId));
+            var client = DocDbSettings.Config[connectionId];
+            await client.DeleteDocumentCollectionAsync(UriFactory.CreateDocumentCollectionUri(connectionId, collectionId));
         }
     }
 }

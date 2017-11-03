@@ -4,6 +4,7 @@
 	using Newtonsoft.Json.Linq;
 	using System;
 	using System.IO;
+    using System.Linq;
 
 	// Super simple AppSettings class
 	public sealed class AppSettings
@@ -54,7 +55,13 @@
 		/// <returns></returns>
 		public T GetSection<T>(string sectionName)
 		{
-			return (_allSettings[sectionName] as JObject).ToObject<T>();
+            if (typeof(T).GetInterfaces().Select(a=>a.Name).Contains("IEnumerable"))
+            {
+                var things = _allSettings[sectionName] as JArray;
+                return things.ToObject<T>();
+            }
+            
+            return (_allSettings[sectionName] as JObject).ToObject<T>();
 		}
     }
 }

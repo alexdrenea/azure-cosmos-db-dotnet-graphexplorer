@@ -12,48 +12,55 @@ namespace GraphExplorer.Controllers.Api
 
     [Route("api/[controller]")]
     public class CollectionController : Controller
-    {  
-        private readonly DocDbConfig dbConfig;
-        private readonly DocumentClient client; 
+    {
+        private readonly DocDbConfigSettings dbConfigs;
 
-        public CollectionController(IOptions<DocDbConfig> configSettings)
+        public CollectionController(IOptions<DocDbConfigSettings> configSettings)
         {
-            dbConfig = configSettings.Value;            
-            client = new DocumentClient(new Uri(dbConfig.Endpoint), dbConfig.AuthKey, new ConnectionPolicy { EnableEndpointDiscovery = false });
+            dbConfigs = configSettings.Value;
         }
 
         [HttpGet]
-        public dynamic GetCollections()
+        [Route("connections")]
+        public dynamic GetConnections()
         {
-            Database database = client.CreateDatabaseQuery("SELECT * FROM d WHERE d.id = \"" + dbConfig.Database + "\"").AsEnumerable().FirstOrDefault();
+            return dbConfigs.Config.Keys.ToList();
+        }
+
+        [HttpGet]
+        public dynamic GetCollections(string name)
+        {
+            DocumentClient client = dbConfigs.Config[name];
+            Database database = client.CreateDatabaseQuery("SELECT * FROM d WHERE d.id = \"" + name + "\"").AsEnumerable().FirstOrDefault();
             List<string> collections = client.CreateDocumentCollectionQuery((String)database.SelfLink).Select(s => s.Id).ToList();
             return collections;
         }
 
         [HttpPost]
-        public async Task CreateCollection([FromQuery]string name)
+        public async Task CreateCollection([FromQuery]string name, [FromQuery]string connectionId)
         {
-            await CreateCollectionIfNotExistsAsync(name);
+            await CreateCollectionIfNotExistsAsync(name, connectionId);
         }
 
         [HttpDelete]
-        public async Task DeleteCollection(string name)
+        public async Task DeleteCollection(string name, string connectionId)
         {
-            await DeleteCollectionAsync(name);
+            await DeleteCollectionAsync(name, connectionId);
         }
 
-        private async Task CreateCollectionIfNotExistsAsync(string collectionId)
+        private async Task CreateCollectionIfNotExistsAsync(string collectionId, string connectionId)
         {
+            var client = dbConfigs.Config[connectionId];
             try
             {
-                await client.ReadDocumentCollectionAsync(UriFactory.CreateDocumentCollectionUri(dbConfig.Database, collectionId));
+                await client.ReadDocumentCollectionAsync(UriFactory.CreateDocumentCollectionUri(connectionId, collectionId));
             }
             catch (DocumentClientException e)
             {
                 if (e.StatusCode == System.Net.HttpStatusCode.NotFound)
                 {
                     await client.CreateDocumentCollectionAsync(
-                        UriFactory.CreateDatabaseUri(dbConfig.Database),
+                        UriFactory.CreateDatabaseUri(connectionId),
                         new DocumentCollection { Id = collectionId },
                         new RequestOptions { OfferThroughput = 400 });
                 }
@@ -64,9 +71,10 @@ namespace GraphExplorer.Controllers.Api
             }
         }
 
-        private async Task DeleteCollectionAsync(string collectionId)
+        private async Task DeleteCollectionAsync(string collectionId, string connectionId)
         {
-            await client.DeleteDocumentCollectionAsync(UriFactory.CreateDocumentCollectionUri(dbConfig.Database, collectionId));
+            var client = dbConfigs.Config[connectionId];
+            await client.DeleteDocumentCollectionAsync(UriFactory.CreateDocumentCollectionUri(connectionId, collectionId));
         }
     }
 }

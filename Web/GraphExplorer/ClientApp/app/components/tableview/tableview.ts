@@ -64,8 +64,12 @@ export class TableView {
                 }
                 break;
 
+            //Value map
             default:
-                break;
+                Object.keys(data).map(function (id, index) {
+                    res[id] = data[id];
+                });
+
         }
 
         return res;

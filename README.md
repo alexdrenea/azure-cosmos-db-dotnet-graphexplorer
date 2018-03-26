@@ -31,8 +31,9 @@ If this process fails for any reason, you will see a message, but don't worry.  
 
 
 ### Running the GraphExplorer front-end application ###
+1. Under `./Web/GraphExplorer/` run the `npm install` command. You might need an elevated command-prompt here.
 1. Open the <font color='lightblue'>/web/GraphExplorer.sln</font> solution in Visual Studio.
-2. Verify your settings in the appsettings.json. if you downloaded this sample from Azure portal quickstart blade, this is all already pre-configured for you. if you downloaded the sample from the github repository, this step is also likely unnecessay. If the console uploader app ran successfully, the appsettings.json file should already
+1. Verify your settings in the appsettings.json. if you downloaded this sample from Azure portal quickstart blade, this is all already pre-configured for you. if you downloaded the sample from the github repository, this step is also likely unnecessay. If the console uploader app ran successfully, the appsettings.json file should already
 be updated for you.  But you can double-check just to be sure.  If anything doesn't look right, go ahead and edit it now, by
 entering your Cosmos DB connection parameters for the following values in appsettings.json:
 
